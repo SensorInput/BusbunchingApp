@@ -2,12 +2,14 @@ package de.htw.ai.busbunching;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 
 import com.loopj.android.http.AsyncHttpClient;
@@ -25,6 +27,8 @@ import cz.msebera.android.httpclient.entity.StringEntity;
 
 import static android.content.Context.LOCATION_SERVICE;
 
+import android.provider.Settings.Secure;
+
 /**
  *
  *
@@ -39,7 +43,7 @@ public class LocationHandler implements LocationListener {
     private String URL_ADDRESS = "http://h2650399.stratoserver.net:4545/position";
     private int ID = 1;
     private Date time = Calendar.getInstance().getTime();
-    private int deviceId = 0;
+    private String deviceID;
     private Context context;
     private double latitude;
     private int interval;
@@ -47,6 +51,8 @@ public class LocationHandler implements LocationListener {
     public LocationHandler(Context context, int interval) {
         this.locationManager = (LocationManager) context.getSystemService(LOCATION_SERVICE);
         this.interval = interval;
+        this.deviceID = Secure.getString(context.getContentResolver(),
+                Secure.ANDROID_ID);
     }
 
 
@@ -98,6 +104,9 @@ public class LocationHandler implements LocationListener {
     @Override
     public void onProviderDisabled(String s) {
 
+        Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        context.startActivity(intent);
+
     }
 
     public void setLatitude(Location latitude) {
@@ -110,7 +119,7 @@ public class LocationHandler implements LocationListener {
         JSONObject jsonParam = new JSONObject();
         jsonParam.put("lat", location.getLatitude());
         jsonParam.put("lng", location.getLongitude());
-        //jsonParam.put("journeyId", journeyID); deviceID
+        jsonParam.put("deviceID", deviceID);
         jsonParam.put("time", System.currentTimeMillis());
 
         httpClient.post(context, URL_ADDRESS, new StringEntity(jsonParam.toString()), "application/json", new AsyncHttpResponseHandler() {
@@ -125,5 +134,9 @@ public class LocationHandler implements LocationListener {
                 System.out.println("Failed success " + statusCode);
             }
         });
+    }
+
+    public String getDeviceID() {
+        return deviceID;
     }
 }
