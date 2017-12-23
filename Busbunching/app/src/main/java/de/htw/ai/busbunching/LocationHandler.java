@@ -1,6 +1,7 @@
 package de.htw.ai.busbunching;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -56,29 +57,12 @@ public class LocationHandler implements LocationListener {
     }
 
 
+    @SuppressLint("MissingPermission")
     public void startLocationHandler() {
 
-        // first check for permissions
-        if (ActivityCompat.checkSelfPermission(this.context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                //String array mit Permission die wir in die AndroidManifest datei geschrieben haben, request code kann eine randomnummer sein, wichtig aber fuer "onRequestPermissionResult
-                requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.INTERNET}
-                        ,101);
-            }
-            return;
-        }
         locationManager.requestLocationUpdates("gps", interval, 0, this);
     }
 
-    private void requestPermissions(String[] strings, int requestCode) {
-        switch (requestCode){
-            case 101:
-                startLocationHandler();
-                break;
-            default:
-                break;
-        }
-    }
 
     @Override
     public void onLocationChanged(Location location) {
@@ -109,13 +93,13 @@ public class LocationHandler implements LocationListener {
 
     }
 
-    public void setLatitude(Location latitude) {
+    private void setLatitude(Location latitude) {
         this.latitude = latitude.getLatitude();
     }
 
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
 
-    public void sendPost(final Location location) throws JSONException, UnsupportedEncodingException {
+    private void sendPost(final Location location) throws JSONException, UnsupportedEncodingException {
         JSONObject jsonParam = new JSONObject();
         jsonParam.put("lat", location.getLatitude());
         jsonParam.put("lng", location.getLongitude());
