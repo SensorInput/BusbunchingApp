@@ -47,6 +47,7 @@ public class LocationHandler implements LocationListener {
     private String deviceID;
     private Context context;
     private double latitude;
+    private double longitude;
     private int interval;
 
     public LocationHandler(Context context, int interval) {
@@ -66,6 +67,9 @@ public class LocationHandler implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
+        //setLatitude(location.getLatitude());
+        //setLongitude(location.getLongitude());
+        /*
         try {
             sendPost(location);
         } catch (JSONException e) {
@@ -73,6 +77,7 @@ public class LocationHandler implements LocationListener {
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
+        */
     }
 
     @Override
@@ -91,10 +96,6 @@ public class LocationHandler implements LocationListener {
         Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
         context.startActivity(intent);
 
-    }
-
-    private void setLatitude(Location latitude) {
-        this.latitude = latitude.getLatitude();
     }
 
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
@@ -122,5 +123,21 @@ public class LocationHandler implements LocationListener {
 
     public String getDeviceID() {
         return deviceID;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
     }
 }

@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -21,6 +22,10 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView mTextMessage;
     private Button start_button;
+    private TextView textView_Coordinates;
+    private LocationHandler locationHandler;
+
+    /*
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -29,18 +34,26 @@ public class MainActivity extends AppCompatActivity {
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
+
                     mTextMessage.setText(R.string.title_home);
                     return true;
-                case R.id.navigation_dashboard:
-                    mTextMessage.setText(R.string.title_dashboard);
+                case R.id.navigation_map:
+                    Intent intentMap = new Intent(MainActivity.this, MapsActivity.class);
+                    startActivity(intentMap);
+                    mTextMessage.setText(R.string.map);
                     return true;
-                case R.id.navigation_notifications:
-                    mTextMessage.setText(R.string.title_notifications);
+                case R.id.navigation_credits:
+                    Intent intentCredits = new Intent(MainActivity.this, CreditsActivity.class);
+                    startActivity(intentCredits);
+                    mTextMessage.setText(R.string.credits);
                     return true;
             }
             return false;
         }
     };
+
+    */
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,9 +62,42 @@ public class MainActivity extends AppCompatActivity {
 
         mTextMessage = (TextView) findViewById(R.id.message);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
-        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        //navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        //MenuItem an der Stelle 0 und angeben das es ausgewählt ist (setChecked(true)
+        Menu menu = navigation.getMenu();
+        MenuItem menuItem = menu.getItem(0);
+        menuItem.setChecked(true);
 
-        configureButton(this);
+        navigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                switch (item.getItemId()) {
+
+                    case R.id.navigation_home:
+                        break;
+
+                    case R.id.navigation_map:
+                        Intent intentMap = new Intent(MainActivity.this, MapsActivity.class);
+                        startActivity(intentMap);
+                        break;
+
+                    case R.id.navigation_credits:
+                        Intent intentCredits = new Intent(MainActivity.this, CreditsActivity.class);
+                        startActivity(intentCredits);
+                        break;
+                }
+                return false;
+            }
+        });
+
+        locationHandler = new LocationHandler(this, 10000);
+
+
+        //textView_Coordinates = (TextView) findViewById(R.id.textView_Coordinates);
+
+        //configureButton(this);
+
+       // textView_Coordinates.append("\n "  + locationHandler.getLatitude()+" " + locationHandler.getLongitude());
 
     }
 
@@ -72,7 +118,6 @@ public class MainActivity extends AppCompatActivity {
         start_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                LocationHandler locationHandler = new LocationHandler(context, 10000);
                 locationHandler.startLocationHandler();
             }
         });
