@@ -1,6 +1,7 @@
 package de.htw.ai.busbunching;
 
 import android.content.Intent;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.FragmentActivity;
@@ -12,12 +13,31 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+
+import com.google.maps.android.geojson.GeoJsonFeature;
+import com.google.maps.android.geojson.GeoJsonLayer;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private GeoJsonLayer layer;
+    private static AsyncHttpClient httpClient = new AsyncHttpClient();
+    private JSONObject json;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +76,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 return false;
             }
         });
+
+
     }
 
 
@@ -72,9 +94,50 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+
+        getRoute(68);
+        /*
         // Add a marker in Sydney and move the camera
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        */
+
+
+    }
+
+    private void getLocationPermission() {
+        //String[] persmission = {Mainfe}
+    }
+
+    private void getRoute(int id) {
+
+        httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/route/geo/" + id, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONObject jsonParam = new JSONObject(new String(responseBody));
+
+                    Handler mainHandler = new Handler(MapsActivity.this.getMainLooper()) ;
+                    Runnable runnable  = ()-> {
+                        layer = new GeoJsonLayer(mMap, jsonParam);
+                        layer.addLayerToMap();
+                        LatLng latLng = new LatLng(52.4572367, 13.5107707);
+                        mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)) );
+                    };
+                    mainHandler.post(runnable);
+                    System.out.println(jsonParam);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                error.printStackTrace();
+                System.out.println("Failed success " + statusCode);
+            }
+        });
     }
 }

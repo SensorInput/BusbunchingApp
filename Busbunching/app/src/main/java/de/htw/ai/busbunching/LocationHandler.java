@@ -69,6 +69,9 @@ public class LocationHandler implements LocationListener {
     public void onLocationChanged(Location location) {
         //setLatitude(location.getLatitude());
         //setLongitude(location.getLongitude());
+        System.out.println("LOCATION: "+location.getLatitude()+" "+location.getLongitude());
+
+
         /*
         try {
             sendPost(location);
@@ -78,6 +81,7 @@ public class LocationHandler implements LocationListener {
             e.printStackTrace();
         }
         */
+
     }
 
     @Override

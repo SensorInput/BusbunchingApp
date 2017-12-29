@@ -1,29 +1,38 @@
 package de.htw.ai.busbunching;
 
 import android.Manifest;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 
 import java.time.Clock;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextView mTextMessage;
     private Button start_button;
-    private TextView textView_Coordinates;
     private LocationHandler locationHandler;
+
+    private static final String TAG ="MainActivity";
+    //Error den wir erhalten wenn der user nicht die korrekte version der Google Play Services besitzt
+    private static final int ERROR_DIALOG_REQUEST = 9001;
 
     /*
 
@@ -60,20 +69,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mTextMessage = (TextView) findViewById(R.id.message);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
-        //navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         //MenuItem an der Stelle 0 und angeben das es ausgewählt ist (setChecked(true)
         Menu menu = navigation.getMenu();
         MenuItem menuItem = menu.getItem(0);
         menuItem.setChecked(true);
-
         navigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 switch (item.getItemId()) {
 
                     case R.id.navigation_home:
+                        //Hier muss nix hin da wir uns schon in Home befinden
                         break;
 
                     case R.id.navigation_map:
@@ -92,10 +99,12 @@ public class MainActivity extends AppCompatActivity {
 
         locationHandler = new LocationHandler(this, 10000);
 
-
-        //textView_Coordinates = (TextView) findViewById(R.id.textView_Coordinates);
-
-        //configureButton(this);
+        /*
+        if(checkServices()==true) {
+            configureButton(this);
+        }
+        */
+        //locationHandler.startLocationHandler();
 
        // textView_Coordinates.append("\n "  + locationHandler.getLatitude()+" " + locationHandler.getLongitude());
 
@@ -115,6 +124,8 @@ public class MainActivity extends AppCompatActivity {
             }
             return;
         }
+
+
         start_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -133,5 +144,30 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
     }
+
+    //Bestätigen das der User die korrekte Version der googlePlayServices besitzt um googlemaps zu nutzen Checking the verison
+    public Boolean checkServices() {
+        Log.d(TAG,"checkServices: checking google services version");
+
+        int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(MainActivity.this);
+
+        if (available == ConnectionResult.SUCCESS){
+            //everything is fine alles ok
+            Log.d(TAG, "checkServices: Google Play Services is working");
+            return true;
+        }else if (GoogleApiAvailability.getInstance().isUserResolvableError(available)){
+            //Error occured but we can resolve it we can fix it
+            Log.d(TAG, "checkingServices: an error occured but it can be fixed ");
+            //Take the error that was thrown and google will give us a dialog where we can find that solution
+            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(MainActivity.this, available, ERROR_DIALOG_REQUEST);
+            dialog.show();
+        }else {
+            //We cant solve the Error
+            Toast.makeText(this, "You cant make map request", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        return false;
+    }
+
 
 }
