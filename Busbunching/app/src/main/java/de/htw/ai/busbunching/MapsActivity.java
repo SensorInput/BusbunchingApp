@@ -1,6 +1,7 @@
 package de.htw.ai.busbunching;
 
 import android.content.Intent;
+import android.location.Location;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -31,7 +32,7 @@ import java.io.IOException;
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationHandler.LocationHandlerListener {
 
     private GoogleMap mMap;
     private GeoJsonLayer layer;
@@ -77,7 +78,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-
+        if (LocationHandler.getInstance() == null) {
+            LocationHandler.createInstance(this, 10000);
+        }
+        LocationHandler.getInstance().addListener(this);
     }
 
 
@@ -122,8 +126,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Runnable runnable  = ()-> {
                         layer = new GeoJsonLayer(mMap, jsonParam);
                         layer.addLayerToMap();
-                        LatLng latLng = new LatLng(52.4572367, 13.5107707);
-                        mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)) );
                     };
                     mainHandler.post(runnable);
                     System.out.println(jsonParam);
@@ -139,5 +141,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 System.out.println("Failed success " + statusCode);
             }
         });
+    }
+
+    //TODO GET "http://h2650399.stratoserver.net:4545/api/v1/vehicle/deviceId/list"
+    // android worker call ->
+
+    /*Handler handler = new Handler();
+    int delay = 10000; //milliseconds
+
+        handler.postDelayed(new Runnable(){
+        public void run(){
+            //do something : GET
+            // for each: mMap.addMarker()
+            // der erste in jason ist der am weitesten entfernzte hinter mir
+            handler.postDelayed(this, delay);
+        }
+    }, delay);*/
+
+    @Override
+    public void onLocationUpdate(Location location) {
+        // TODO POST mit location MAYBE
+
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)) );
     }
 }

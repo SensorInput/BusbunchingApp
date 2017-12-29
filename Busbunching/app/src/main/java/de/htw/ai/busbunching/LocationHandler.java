@@ -1,17 +1,18 @@
 package de.htw.ai.busbunching;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.provider.Settings.Secure;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -20,15 +21,18 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
+import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.content.Context.LOCATION_SERVICE;
-
-import android.provider.Settings.Secure;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 /**
  *
@@ -42,15 +46,47 @@ public class LocationHandler implements LocationListener {
     private LocationManager locationManager;
     //Listen for location changes
     private String URL_ADDRESS = "http://h2650399.stratoserver.net:4545/position";
-    private int ID = 1;
-    private Date time = Calendar.getInstance().getTime();
     private String deviceID;
     private Context context;
     private double latitude;
     private double longitude;
     private int interval;
+    private static final int REQUEST_CODE = 101;
 
-    public LocationHandler(Context context, int interval) {
+    // Singleton
+    private static LocationHandler INSTANCE;
+
+    public static LocationHandler createInstance(Context context, int interval) {
+        if (INSTANCE == null) {
+            INSTANCE = new LocationHandler(context, interval);
+        }
+        return INSTANCE;
+    }
+
+    public static LocationHandler getInstance() {
+        if (INSTANCE == null) {
+            throw new RuntimeException("Instance is null");
+        }
+        return INSTANCE;
+    }
+
+    // Listener
+    private List<LocationHandlerListener> listeners = new ArrayList<>();
+
+    public void addListener(LocationHandlerListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeListener(LocationHandlerListener listener) {
+        listeners.remove(listener);
+    }
+
+    public interface LocationHandlerListener {
+        void onLocationUpdate(Location location);
+    }
+
+    private LocationHandler(Context context, int interval) {
+        this.context = context;
         this.locationManager = (LocationManager) context.getSystemService(LOCATION_SERVICE);
         this.interval = interval;
         this.deviceID = Secure.getString(context.getContentResolver(),
@@ -58,10 +94,28 @@ public class LocationHandler implements LocationListener {
     }
 
 
-    @SuppressLint("MissingPermission")
     public void startLocationHandler() {
 
+        if (ActivityCompat.checkSelfPermission(context, ACCESS_FINE_LOCATION) != PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                //String array mit Permission die wir in die AndroidManifest datei geschrieben haben, request code kann eine randomnummer sein, wichtig aber fuer "onRequestPermissionResult
+                requestOnPermissions(new String[]{ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION, Manifest.permission.INTERNET}
+                        , 101);
+            }
+            return;
+        }
         locationManager.requestLocationUpdates("gps", interval, 0, this);
+    }
+
+    private void requestOnPermissions(String[] strings, int i) {
+        switch (i) {
+            case 101:
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                context.startActivity(intent);
+                break;
+            default:
+                break;
+        }
     }
 
 
@@ -69,8 +123,11 @@ public class LocationHandler implements LocationListener {
     public void onLocationChanged(Location location) {
         //setLatitude(location.getLatitude());
         //setLongitude(location.getLongitude());
-        System.out.println("LOCATION: "+location.getLatitude()+" "+location.getLongitude());
+        System.out.println("LOCATION: " + location.getLatitude() + " " + location.getLongitude());
 
+        for (LocationHandlerListener listener : listeners) {
+            listener.onLocationUpdate(location);
+        }
 
         /*
         try {
@@ -144,4 +201,14 @@ public class LocationHandler implements LocationListener {
     public void setLongitude(double longitude) {
         this.longitude = longitude;
     }
+
+    public void askForPermission(Activity activity) {
+        // Ask for permission
+        if (ContextCompat.checkSelfPermission(activity, ACCESS_FINE_LOCATION) != PERMISSION_GRANTED) {
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(activity, ACCESS_FINE_LOCATION)) {
+                ActivityCompat.requestPermissions(activity, new String[]{ACCESS_FINE_LOCATION}, REQUEST_CODE);
+            }
+        }
+    }
+
 }

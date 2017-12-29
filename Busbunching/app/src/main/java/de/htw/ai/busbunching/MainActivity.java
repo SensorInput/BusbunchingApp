@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
@@ -23,9 +24,12 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
-import java.time.Clock;
+import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
-public class MainActivity extends AppCompatActivity {
+
+public class MainActivity extends AppCompatActivity implements LocationHandler.LocationHandlerListener {
 
     private Button start_button;
     private LocationHandler locationHandler;
@@ -97,52 +101,20 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        locationHandler = new LocationHandler(this, 10000);
+        locationHandler = LocationHandler.createInstance(this, 10000);
+        locationHandler.askForPermission(this);
+        locationHandler.addListener(this);
 
-        /*
-        if(checkServices()==true) {
-            configureButton(this);
-        }
-        */
-        //locationHandler.startLocationHandler();
+        configureButton(this);
 
        // textView_Coordinates.append("\n "  + locationHandler.getLatitude()+" " + locationHandler.getLongitude());
 
     }
 
     public void configureButton (final Context context) {
+        start_button = findViewById(R.id.start_button);
+        start_button.setOnClickListener(view -> locationHandler.startLocationHandler());
 
-        start_button = (Button) findViewById(R.id.start_button);
-
-
-        // first check for permissions
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                //String array mit Permission die wir in die AndroidManifest datei geschrieben haben, request code kann eine randomnummer sein, wichtig aber fuer "onRequestPermissionResult
-                requestOnPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.INTERNET}
-                        ,101);
-            }
-            return;
-        }
-
-
-        start_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                locationHandler.startLocationHandler();
-            }
-        });
-
-    }
-
-    public void requestOnPermissions(String[] strings, int requestCode) {
-        switch (requestCode){
-            case 101:
-                configureButton(this);
-                break;
-            default:
-                break;
-        }
     }
 
     //Bestätigen das der User die korrekte Version der googlePlayServices besitzt um googlemaps zu nutzen Checking the verison
@@ -169,5 +141,24 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case 101: {
+                // If request is cancelled, the result arrays are empty.
+                if (!(grantResults.length > 0 && grantResults[0] == PERMISSION_GRANTED)) {
+                    if (ActivityCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION) != PERMISSION_GRANTED
+                            && ActivityCompat.checkSelfPermission(this, ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
+                        Toast.makeText(this, "Access denied", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        }
+    }
 
+    @Override
+    public void onLocationUpdate(Location location) {
+        Toast.makeText(this, location.getLatitude() + " " + location.getLongitude(), Toast.LENGTH_SHORT).show();
+        //TODO PUT
+    }
 }
