@@ -1,5 +1,6 @@
 package de.htw.ai.busbunching;
 
+import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Handler;
@@ -24,10 +25,14 @@ import com.google.maps.android.geojson.GeoJsonLayer;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
@@ -37,7 +42,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private GeoJsonLayer layer;
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
-    private JSONObject json;
+    private ArrayList<String> arrayList = new ArrayList<>();
+//    private String URL_ADDRESS = "http://h2650399.stratoserver.net:4545/position";
+//    private String deviceID;
+
 
 
     @Override
@@ -49,7 +57,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         //navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         Menu menu = navigation.getMenu();
@@ -59,16 +66,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 switch (item.getItemId()) {
-
                     case R.id.navigation_home:
                         Intent intentHome = new Intent(MapsActivity.this, MainActivity.class);
                         startActivity(intentHome);
                         break;
-
                     case R.id.navigation_map:
-
                         break;
-
                     case R.id.navigation_credits:
                         Intent intentCredits = new Intent(MapsActivity.this, CreditsActivity.class);
                         startActivity(intentCredits);
@@ -98,16 +101,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-
         getRoute(68);
-        /*
+        startGetVehiclesOnRouteHandler(68);
+
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-        */
-
-
+//        LatLng sydney = new LatLng(-34, 151);
+//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
+        LatLng berlin = new LatLng(52.4, 13.5);
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(berlin));
     }
 
     private void getLocationPermission() {
@@ -115,7 +116,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void getRoute(int id) {
-
         httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/route/geo/" + id, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -132,6 +132,47 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+            }
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                error.printStackTrace();
+                System.out.println("Failed success " + statusCode);
+            }
+        });
+    }
+
+    private void getVehiclesOnRoute(int id) {
+        httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/636c81cc2361acd7/list", new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONArray jsonArray = new JSONArray(new String(responseBody));
+                    //JSONObject jsonParam = new JSONObject(new String(responseBody));
+
+                    Handler mainHandler = new Handler(MapsActivity.this.getMainLooper()) ;
+                    Runnable runnable  = ()-> {
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            try {
+                                JSONObject jsonObj = jsonArray.getJSONObject(i);
+                                System.out.println(jsonObj);
+                                JSONObject jsonObject = jsonArray.getJSONObject(i).getJSONObject("geoLngLat");
+
+                                System.out.println("lat: " + jsonObject.getDouble("lat"));
+                                LatLng latLng = new LatLng(jsonObject.getDouble("lat"), jsonObject.getDouble("lng"));
+                                if (jsonObj.getDouble("relativeDistance") == 0) {
+                                    mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)) );
+                                } else {
+                                    mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)) );
+                                }
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    };
+                    mainHandler.post(runnable);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
 
             }
 
@@ -143,26 +184,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    //TODO GET "http://h2650399.stratoserver.net:4545/api/v1/vehicle/deviceId/list"
-    // android worker call ->
-
-    /*Handler handler = new Handler();
-    int delay = 10000; //milliseconds
+    private void startGetVehiclesOnRouteHandler(int routeId) {
+        Handler handler = new Handler();
+        int delay = 10000; //milliseconds
 
         handler.postDelayed(new Runnable(){
-        public void run(){
-            //do something : GET
-            // for each: mMap.addMarker()
-            // der erste in jason ist der am weitesten entfernzte hinter mir
-            handler.postDelayed(this, delay);
-        }
-    }, delay);*/
+            public void run(){
+                System.out.println("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
+                getVehiclesOnRoute(routeId);
+                handler.postDelayed(this, delay);
+            }
+        }, delay);
+    }
+
 
     @Override
     public void onLocationUpdate(Location location) {
         // TODO POST mit location MAYBE
 
-        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)) );
+//        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+//        mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)) );
+
     }
 }
