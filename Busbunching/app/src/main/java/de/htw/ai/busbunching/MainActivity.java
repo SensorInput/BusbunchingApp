@@ -4,6 +4,7 @@ package de.htw.ai.busbunching;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 
 import android.location.Location;
@@ -231,6 +232,29 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     private void showDialog(/*Route[] route*/) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         View view = getLayoutInflater().inflate(R.layout.dialog_route, null);
+//        builder.setPositiveButton("Call Now",
+//                new DialogInterface.OnClickListener()
+//                {
+//                    public void onClick(DialogInterface dialog, int id)
+//                    {
+//                        dialog.cancel();
+//                    }
+//                });
+        builder.setItems(new CharSequence[] {"button 1", "button 2"},
+            new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    // The 'which' argument contains the index position
+                    // of the selected item
+                    switch (which) {
+                        case 0:
+                            Toast.makeText(MainActivity.this, "clicked 1", 0).show();
+                            break;
+                        case 1:
+                            Toast.makeText(MainActivity.this, "clicked 2", 0).show();
+                            break;
+                    }
+                }
+            });
         builder.setView(view);
         AlertDialog dialog = builder.create();
         dialog.show();
