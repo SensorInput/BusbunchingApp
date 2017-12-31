@@ -14,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Layout;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -21,6 +22,8 @@ import android.view.View;
 import android.widget.Button;
 
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -51,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     private LocationHandler locationHandler;
 
     List<Route> routes = new ArrayList<>();
+    private Route currentRoute;
 
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
 
@@ -121,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             }
         });
 
-        getRouteDetail("67");
+        //getRouteDetail("67");
 
         //routes[0].toString();
 
@@ -141,12 +145,11 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         start_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String buslinieId;
+                String buslinieId = busline_text.getText().toString();
                 locationHandler.startLocationHandler();
-                buslinieId = busline_text.getText().toString();
                 busline_text.setText("");
-                showDialog();
-                //getRouteDetail(buslinieId);
+//                showDialog();
+                getRouteDetail(buslinieId);
                 //Dialog
             }
         });
@@ -200,7 +203,6 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
     private void getRouteDetail(String ref) {
 
-
         httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/route/" + ref, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -212,6 +214,10 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                         Route route = gson.fromJson(String.valueOf(jsonRoute),Route.class);
                         routes.add(route);
                     }
+                    showDialog();
+//                    System.out.println(routes);
+//                    System.out.println("routes.length: " + routes.size());
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -232,31 +238,31 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     private void showDialog(/*Route[] route*/) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         View view = getLayoutInflater().inflate(R.layout.dialog_route, null);
-//        builder.setPositiveButton("Call Now",
-//                new DialogInterface.OnClickListener()
-//                {
-//                    public void onClick(DialogInterface dialog, int id)
-//                    {
-//                        dialog.cancel();
-//                    }
-//                });
-        builder.setItems(new CharSequence[] {"button 1", "button 2"},
+
+        CharSequence [] routeNames = new CharSequence[routes.size()];
+        for (int i = 0 ; i < routes.size(); i++) {
+            routeNames[i] = routes.get(i).getName();
+        }
+
+        System.out.println("routeNames: "  + routeNames);
+        builder.setItems(routeNames,
             new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    // The 'which' argument contains the index position
-                    // of the selected item
-                    switch (which) {
-                        case 0:
-                            Toast.makeText(MainActivity.this, "clicked 1", 0).show();
-                            break;
-                        case 1:
-                            Toast.makeText(MainActivity.this, "clicked 2", 0).show();
-                            break;
-                    }
+                public void onClick(DialogInterface dialog, int i) {
+                    currentRoute = routes.get(i);
+                    Toast.makeText(MainActivity.this, "clicked " + i + " currentRoute: " + currentRoute, Toast.LENGTH_LONG).show();
+                    routes.clear();
                 }
             });
+
         builder.setView(view);
         AlertDialog dialog = builder.create();
+        dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                routes.clear();
+            }
+        });
         dialog.show();
 
     }
