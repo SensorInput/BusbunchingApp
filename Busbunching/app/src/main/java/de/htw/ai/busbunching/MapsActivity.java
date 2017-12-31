@@ -91,6 +91,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         getRoute(68);
+        getVehiclesOnRoute(68);
         startGetVehiclesOnRouteHandler(68);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(BERLIN, 10));
     }
@@ -199,7 +200,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // TODO POST mit location MAYBE
 
 //        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-//        mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)) );
+//        mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
 
     }
 
