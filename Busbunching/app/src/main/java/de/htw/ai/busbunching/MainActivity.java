@@ -1,13 +1,13 @@
 package de.htw.ai.busbunching;
 
-import android.Manifest;
+
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+
 import android.location.Location;
-import android.nfc.Tag;
-import android.os.Build;
+
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -18,7 +18,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
+
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -28,13 +29,31 @@ import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
+import com.google.gson.Gson;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import cz.msebera.android.httpclient.Header;
+
 
 public class MainActivity extends AppCompatActivity implements LocationHandler.LocationHandlerListener {
 
     private Button start_button;
+    private EditText busline_text;
     private LocationHandler locationHandler;
 
-    private static final String TAG ="MainActivity";
+    List<Route> routes = new ArrayList<>();
+
+    private static AsyncHttpClient httpClient = new AsyncHttpClient();
+
+    private static final String TAG = "MainActivity";
     //Error den wir erhalten wenn der user nicht die korrekte version der Google Play Services besitzt
     private static final int ERROR_DIALOG_REQUEST = 9001;
 
@@ -101,41 +120,57 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             }
         });
 
+        getRouteDetail("67");
+
+        //routes[0].toString();
+
         locationHandler = LocationHandler.createInstance(this, 10000);
         locationHandler.askForPermission(this);
         locationHandler.addListener(this);
 
         configureButton(this);
 
-       // textView_Coordinates.append("\n "  + locationHandler.getLatitude()+" " + locationHandler.getLongitude());
-
     }
 
-    public void configureButton (final Context context) {
+    public void configureButton(final Context context) {
+
         start_button = findViewById(R.id.start_button);
-        start_button.setOnClickListener(view -> locationHandler.startLocationHandler());
+        busline_text = findViewById(R.id.busline);
+        //start_button.setOnClickListener(view -> locationHandler.startLocationHandler());
+        start_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String buslinieId;
+                locationHandler.startLocationHandler();
+                buslinieId = busline_text.getText().toString();
+                busline_text.setText("");
+                showDialog();
+                //getRouteDetail(buslinieId);
+                //Dialog
+            }
+        });
 
     }
 
     //Bestätigen das der User die korrekte Version der googlePlayServices besitzt um googlemaps zu nutzen Checking the verison
     public Boolean checkServices() {
-        Log.d(TAG,"checkServices: checking google services version");
+        Log.d(TAG, "checkServices: checking google services version");
 
         int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(MainActivity.this);
 
-        if (available == ConnectionResult.SUCCESS){
+        if (available == ConnectionResult.SUCCESS) {
             //everything is fine alles ok
             Log.d(TAG, "checkServices: Google Play Services is working");
             return true;
-        }else if (GoogleApiAvailability.getInstance().isUserResolvableError(available)){
+        } else if (GoogleApiAvailability.getInstance().isUserResolvableError(available)) {
             //Error occured but we can resolve it we can fix it
             Log.d(TAG, "checkingServices: an error occured but it can be fixed ");
             //Take the error that was thrown and google will give us a dialog where we can find that solution
             Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(MainActivity.this, available, ERROR_DIALOG_REQUEST);
             dialog.show();
-        }else {
+        } else {
             //We cant solve the Error
-            Toast.makeText(this, "You cant make map request", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "checkServices: You cant make map request", Toast.LENGTH_SHORT).show();
             return false;
         }
         return false;
@@ -160,5 +195,45 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     public void onLocationUpdate(Location location) {
         Toast.makeText(this, location.getLatitude() + " " + location.getLongitude(), Toast.LENGTH_SHORT).show();
         //TODO PUT
+    }
+
+    private void getRouteDetail(String ref) {
+
+
+        httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/route/" + ref, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONArray allRoute = new JSONArray(new String(responseBody));
+                    for(int i=0; i< allRoute.length();i++) {
+                        Gson gson = new Gson();
+                        JSONObject jsonRoute = allRoute.getJSONObject(i);
+                        Route route = gson.fromJson(String.valueOf(jsonRoute),Route.class);
+                        routes.add(route);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                error.printStackTrace();
+                System.out.println("Failed success " + statusCode);
+            }
+        });
+    }
+
+    private void putRouteDetail() {
+        //hier push mit id aus dem json von dem getRequest
+    }
+
+    private void showDialog(/*Route[] route*/) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_route, null);
+        builder.setView(view);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
     }
 }
