@@ -55,6 +55,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
     List<Route> routes = new ArrayList<>();
     private Route currentRoute;
+    private String currentRouteRef;
+    private String buslinieId;
 
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
 
@@ -113,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
                     case R.id.navigation_map:
                         Intent intentMap = new Intent(MainActivity.this, MapsActivity.class);
+                        intentMap.putExtra("routeRef", currentRouteRef);
                         startActivity(intentMap);
                         break;
 
@@ -145,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         start_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String buslinieId = busline_text.getText().toString();
+                buslinieId = busline_text.getText().toString();
                 locationHandler.startLocationHandler();
                 busline_text.setText("");
 //                showDialog();
@@ -202,7 +205,6 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     }
 
     private void getRouteDetail(String ref) {
-
         httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/route/" + ref, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -247,17 +249,17 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         System.out.println("routeNames: "  + routeNames);
         builder.setItems(routeNames,
             new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int i) {
-                    currentRoute = routes.get(i);
-                    Toast.makeText(MainActivity.this, "clicked " + i + " currentRoute: " + currentRoute, Toast.LENGTH_LONG).show();
-                    routes.clear();
-                }
-            });
+            public void onClick(DialogInterface dialog, int i) {
+                currentRoute = routes.get(i);
+                currentRouteRef = currentRoute.getRef();
+                Toast.makeText(MainActivity.this, "clicked " + i + " currentRoute: " + currentRoute, Toast.LENGTH_LONG).show();
+                routes.clear();
+            }
+        });
 
         builder.setView(view);
         AlertDialog dialog = builder.create();
         dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-
             @Override
             public void onCancel(DialogInterface dialog) {
                 routes.clear();
