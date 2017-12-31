@@ -1,6 +1,5 @@
 package de.htw.ai.busbunching;
 
-import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Handler;
@@ -20,7 +19,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 
-import com.google.maps.android.geojson.GeoJsonFeature;
 import com.google.maps.android.geojson.GeoJsonLayer;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -29,13 +27,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import cz.msebera.android.httpclient.Header;
-import cz.msebera.android.httpclient.entity.StringEntity;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationHandler.LocationHandlerListener {
 
@@ -87,26 +83,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LocationHandler.getInstance().addListener(this);
     }
 
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
         getRoute(68);
         startGetVehiclesOnRouteHandler(68);
-
-        // Add a marker in Sydney and move the camera
-//        LatLng sydney = new LatLng(-34, 151);
-//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         LatLng berlin = new LatLng(52.4, 13.5);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(berlin));
     }
@@ -121,7 +102,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
                     JSONObject jsonParam = new JSONObject(new String(responseBody));
-
                     Handler mainHandler = new Handler(MapsActivity.this.getMainLooper()) ;
                     Runnable runnable  = ()-> {
                         layer = new GeoJsonLayer(mMap, jsonParam);
@@ -147,7 +127,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
                     JSONArray jsonArray = new JSONArray(new String(responseBody));
-                    //JSONObject jsonParam = new JSONObject(new String(responseBody));
 
                     Handler mainHandler = new Handler(MapsActivity.this.getMainLooper()) ;
                     Runnable runnable  = ()-> {
@@ -160,9 +139,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 System.out.println("lat: " + jsonObject.getDouble("lat"));
                                 LatLng latLng = new LatLng(jsonObject.getDouble("lat"), jsonObject.getDouble("lng"));
                                 if (jsonObj.getDouble("relativeDistance") == 0) {
-                                    mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)) );
+                                    mMap.addMarker(new MarkerOptions()
+                                            .position(latLng)
+                                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
                                 } else {
-                                    mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)) );
+                                    double relDist = jsonObj.getDouble("relativeDistance");
+                                    relDist = ((double)((int)(relDist * 100))) / 100;
+                                    int relTimeDist = jsonObj.getInt("relativeTimeDistance");
+                                    String relTimeDistString = formatMillisToOutputString(relTimeDist);
+                                    mMap.addMarker(new MarkerOptions()
+                                            .position(latLng)
+                                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                                            .title(relTimeDistString)
+                                            .snippet(String.valueOf(relDist) + " Meter"));
                                 }
                             } catch (JSONException e) {
                                 e.printStackTrace();
@@ -190,7 +179,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         handler.postDelayed(new Runnable(){
             public void run(){
-                System.out.println("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
                 getVehiclesOnRoute(routeId);
                 handler.postDelayed(this, delay);
             }
@@ -205,5 +193,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 //        mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)) );
 
+    }
+
+    private String formatMillisToOutputString (long millis) {
+        return String.format("%d min, %d sec",
+                TimeUnit.MILLISECONDS.toMinutes(millis),
+                TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis))
+        );
     }
 }
