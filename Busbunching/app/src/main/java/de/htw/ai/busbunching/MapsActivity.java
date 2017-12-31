@@ -139,8 +139,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 JSONObject jsonObj = jsonArray.getJSONObject(i);
                                 System.out.println(jsonObj);
                                 JSONObject jsonObject = jsonArray.getJSONObject(i).getJSONObject("geoLngLat");
-
-                                System.out.println("lat: " + jsonObject.getDouble("lat"));
                                 LatLng latLng = new LatLng(jsonObject.getDouble("lat"), jsonObject.getDouble("lng"));
                                 if (jsonObj.getDouble("relativeDistance") == 0) {
                                     if (newlyLoaded) {
