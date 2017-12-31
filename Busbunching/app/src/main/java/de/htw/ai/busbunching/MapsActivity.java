@@ -35,6 +35,8 @@ import cz.msebera.android.httpclient.Header;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationHandler.LocationHandlerListener {
 
+    private static final LatLng BERLIN = new LatLng(52.5200066,13.404954);
+    private boolean newlyLoaded;
     private GoogleMap mMap;
     private GeoJsonLayer layer;
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
@@ -81,6 +83,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             LocationHandler.createInstance(this, 10000);
         }
         LocationHandler.getInstance().addListener(this);
+
+        newlyLoaded = true;
     }
 
     @Override
@@ -88,8 +92,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
         getRoute(68);
         startGetVehiclesOnRouteHandler(68);
-        LatLng berlin = new LatLng(52.4, 13.5);
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(berlin));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(BERLIN, 10));
     }
 
     private void getLocationPermission() {
@@ -139,6 +142,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 System.out.println("lat: " + jsonObject.getDouble("lat"));
                                 LatLng latLng = new LatLng(jsonObject.getDouble("lat"), jsonObject.getDouble("lng"));
                                 if (jsonObj.getDouble("relativeDistance") == 0) {
+                                    if (newlyLoaded) {
+                                        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                                        mMap.animateCamera(CameraUpdateFactory.zoomTo(12), 2000, null);
+                                        newlyLoaded = false;
+                                    }
                                     mMap.addMarker(new MarkerOptions()
                                             .position(latLng)
                                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
