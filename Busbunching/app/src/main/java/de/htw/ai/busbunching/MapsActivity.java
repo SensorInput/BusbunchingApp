@@ -41,7 +41,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GeoJsonLayer layer;
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
     private ArrayList<String> arrayList = new ArrayList<>();
-    private int routeID;
+    private long journeyID;
+    private String routeID;
 //    private String URL_ADDRESS = "http://h2650399.stratoserver.net:4545/position";
 //    private String deviceID;
 
@@ -51,8 +52,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        routeID = getIntent().getIntExtra("ROUTEID", 68);
-        System.out.println("routeID: " + routeID);
+        journeyID = getIntent().getLongExtra("JOURNEYID", 0);
+        routeID = getIntent().getStringExtra("ROUTEID");
+        System.out.println("journeyID: " + journeyID);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -94,8 +96,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         getRoute(routeID);
-        getVehiclesOnRoute(routeID);
-        startGetVehiclesOnRouteHandler(routeID);
+        getVehiclesOnRoute(journeyID);
+        startGetVehiclesOnRouteHandler(journeyID);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(BERLIN, 10));
     }
 
@@ -103,7 +105,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //String[] persmission = {Mainfe}
     }
 
-    private void getRoute(int id) {
+    private void getRoute(String id) {
         httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/route/geo/" + id, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -128,7 +130,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    private void getVehiclesOnRoute(int id) {
+    private void getVehiclesOnRoute(long id) {
         httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/636c81cc2361acd7/list", new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -183,7 +185,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    private void startGetVehiclesOnRouteHandler(int routeId) {
+    private void startGetVehiclesOnRouteHandler(long routeId) {
         Handler handler = new Handler();
         int delay = 10000; //milliseconds
 

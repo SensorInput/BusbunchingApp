@@ -55,7 +55,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
     List<Route> routes = new ArrayList<>();
     private Route currentRoute;
-    private long currentRouteId;
+    private String currentRouteId;
+    private long currentJourneyId;
     private String buslinieId;
 
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
@@ -115,6 +116,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
                     case R.id.navigation_map:
                         Intent intentMap = new Intent(MainActivity.this, MapsActivity.class);
+                        intentMap.putExtra("JOURNEYID", currentJourneyId);
                         intentMap.putExtra("ROUTEID", currentRouteId);
                         startActivity(intentMap);
                         break;
@@ -250,7 +252,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int i) {
                 currentRoute = routes.get(i);
-                currentRouteId = currentRoute.getId();
+                currentJourneyId = currentRoute.getId();
+                currentRouteId = currentRoute.getRef();
                 Toast.makeText(MainActivity.this, "clicked " + i + " currentRoute: " + currentRoute, Toast.LENGTH_LONG).show();
                 routes.clear();
             }
