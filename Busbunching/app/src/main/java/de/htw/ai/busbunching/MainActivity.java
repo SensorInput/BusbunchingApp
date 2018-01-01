@@ -23,6 +23,7 @@ import android.view.View;
 import android.widget.Button;
 
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -63,6 +64,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     private EditText busline_text;
     private TextView frontVehicle;
     private TextView vehicleBehind;
+    private ImageView vehicleFrontImage;
+    private ImageView vehicleBackImage;
 
     private LocationHandler locationHandler;
 
@@ -117,6 +120,9 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
         frontVehicle = (TextView) findViewById(R.id.textViewVehicleBehind);
         vehicleBehind = (TextView) findViewById(R.id.textViewFrontVehicle);
+
+        vehicleFrontImage = (ImageView) findViewById(R.id.imageViewFrontVehicle);
+        vehicleBackImage = (ImageView) findViewById(R.id.imageViewVehicleBehind);
 
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         //MenuItem an der Stelle 0 und angeben das es ausgewählt ist (setChecked(true)
@@ -290,6 +296,12 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                             JSONObject jsonVehicleBehind = allVehicleOnRoute.getJSONObject(i + 1);
 
                             int relTimeDistFront = jsonVehicleFront.getInt("relativeTimeDistance");
+                            /* Beispiel
+                            if(relTimeDistFront < 7) {
+                                vehicleFrontImage.setBackgroundColor(200);
+                            }
+                            */
+
                             String relTimeDistFrontString = formatMillisToOutputString(relTimeDistFront);
                             System.out.println("@@@@@@@@@@@@@@@@ "+ relTimeDistFrontString);
                             MainActivity.this.frontVehicle.setText(relTimeDistFrontString);
