@@ -36,6 +36,7 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -204,7 +205,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     public void onLocationUpdate(Location location) {
         Toast.makeText(this, location.getLatitude() + " " + location.getLongitude(), Toast.LENGTH_SHORT).show();
         //TODO PUT
-        // putRouteDetail();
+        putRouteDetail();
     }
 
     private void getRouteDetail(String ref) {
@@ -237,7 +238,19 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     }
 
     private void putRouteDetail() {
-        //hier push mit id aus dem json von dem getRequest
+        RequestParams params = new RequestParams();
+        params.put("ref", currentRouteId);
+        params.put("id", currentJourneyId);
+        httpClient.put(null, "http://h2650399.stratoserver.net:4545/api/v1/vehicle", params, new AsyncHttpResponseHandler() {
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                System.out.println("put successful");
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                System.out.println("Failed put " + statusCode);
+            }
+        });
     }
 
     private void showDialog(/*Route[] route*/) {
