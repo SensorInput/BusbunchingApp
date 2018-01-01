@@ -107,11 +107,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
         */
 
-
-    }
-
-    private void getLocationPermission() {
-        //String[] persmission = {Mainfe}
     }
 
     private void getRoute(int id) {

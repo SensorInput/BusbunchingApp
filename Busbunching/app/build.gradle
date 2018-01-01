@@ -36,5 +36,7 @@ dependencies {
     //Google play services
     compile 'com.google.android.gms:play-services-maps:11.8.0'
     compile 'com.google.maps.android:android-maps-utils:0.4+'
+    //gson
+    compile 'com.google.code.gson:gson:2.8.2'
 
 }
