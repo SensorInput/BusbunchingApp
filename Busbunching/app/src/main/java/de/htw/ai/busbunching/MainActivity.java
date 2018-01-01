@@ -36,15 +36,18 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
 
 
 public class MainActivity extends AppCompatActivity implements LocationHandler.LocationHandlerListener {
@@ -55,8 +58,11 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
     List<Route> routes = new ArrayList<>();
     private Route currentRoute;
-    private long currentRouteId;
+    private String currentRouteId;
+    private long currentJourneyId;
     private String buslinieId;
+    private String deviceId = "";
+
 
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
 
@@ -115,6 +121,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
                     case R.id.navigation_map:
                         Intent intentMap = new Intent(MainActivity.this, MapsActivity.class);
+                        intentMap.putExtra("JOURNEYID", currentJourneyId);
                         intentMap.putExtra("ROUTEID", currentRouteId);
                         startActivity(intentMap);
                         break;
@@ -135,6 +142,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         locationHandler = LocationHandler.createInstance(this, 10000);
         locationHandler.askForPermission(this);
         locationHandler.addListener(this);
+        deviceId = locationHandler.getDeviceID();
 
         configureButton(this);
 
@@ -202,6 +210,13 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     public void onLocationUpdate(Location location) {
         Toast.makeText(this, location.getLatitude() + " " + location.getLongitude(), Toast.LENGTH_SHORT).show();
         //TODO PUT
+        try {
+            putRouteDetail();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
     }
 
     private void getRouteDetail(String ref) {
@@ -233,9 +248,46 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         });
     }
 
-    private void putRouteDetail() {
-        //hier push mit id aus dem json von dem getRequest
+
+    private void putRouteDetail() throws JSONException, UnsupportedEncodingException {
+        JSONObject jsonParam = new JSONObject();
+        jsonParam.put("ref", currentRouteId);
+        jsonParam.put("routeId", currentJourneyId);
+        jsonParam.put("time", System.currentTimeMillis());
+        jsonParam.put("position", "test");
+        jsonParam.put("lng", locationHandler.getLongitude());
+
+
+        httpClient.put(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/" + deviceId, new StringEntity(jsonParam.toString()), "application/json", new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                System.out.println("PUT success");
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                error.printStackTrace();
+                System.out.println("PUT Failed " + statusCode);
+            }
+        });
     }
+
+
+//    private void putRouteDetail() {
+//        RequestParams params = new RequestParams();
+//        params.put("ref", currentRouteId);
+//        params.put("routeId", currentJourneyId);
+//        httpClient.put(null, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/" + deviceId, params, new AsyncHttpResponseHandler() {
+//            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+//                System.out.println("put successful");
+//            }
+//
+//            @Override
+//            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+//                System.out.println("Failed put " + statusCode);
+//            }
+//        });
+//    }
 
     private void showDialog(/*Route[] route*/) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -250,7 +302,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int i) {
                 currentRoute = routes.get(i);
-                currentRouteId = currentRoute.getId();
+                currentJourneyId = currentRoute.getId();
+                currentRouteId = currentRoute.getRef();
                 Toast.makeText(MainActivity.this, "clicked " + i + " currentRoute: " + currentRoute, Toast.LENGTH_LONG).show();
                 routes.clear();
             }
