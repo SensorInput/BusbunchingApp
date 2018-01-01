@@ -7,10 +7,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 
+import android.content.SharedPreferences;
 import android.location.Location;
 
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -42,14 +45,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
 
+//public class MainActivity extends AppCompatActivity implements LocationHandler.LocationHandlerListener, SharedPreferences.Editor {
 public class MainActivity extends AppCompatActivity implements LocationHandler.LocationHandlerListener {
 
     private Button start_button;
@@ -63,6 +71,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     private String buslinieId;
     private String deviceId = "";
 
+    private static String uniqueID = null;
+    private static final String PREF_UNIQUE_ID = "PREF_UNIQUE_ID";
 
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
 
@@ -105,6 +115,17 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+//        uniqueID = id(this);
+//        writeToFile("sdlfkjslk", this);
+//
+//        System.out.println("uniqueID onCreate after initialisation: " + uniqueID);
+//        System.out.println("PREF_UNIQUE_ID" + PREF_UNIQUE_ID);
+//
+//        Toast.makeText(this, "uniqueID onCreate after initialisation: " + uniqueID, Toast.LENGTH_LONG).show();
+
+
+
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         //MenuItem an der Stelle 0 und angeben das es ausgewählt ist (setChecked(true)
         Menu menu = navigation.getMenu();
@@ -135,17 +156,12 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             }
         });
 
-        //getRouteDetail("67");
-
-        //routes[0].toString();
-
         locationHandler = LocationHandler.createInstance(this, 10000);
         locationHandler.askForPermission(this);
         locationHandler.addListener(this);
         deviceId = locationHandler.getDeviceID();
 
         configureButton(this);
-
     }
 
     public void configureButton(final Context context) {
@@ -209,9 +225,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     @Override
     public void onLocationUpdate(Location location) {
         Toast.makeText(this, location.getLatitude() + " " + location.getLongitude(), Toast.LENGTH_SHORT).show();
-        //TODO PUT
         try {
-            putRouteDetail();
+            UpdateCurrentPosition(location);
         } catch (JSONException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -254,9 +269,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         jsonParam.put("ref", currentRouteId);
         jsonParam.put("routeId", currentJourneyId);
         jsonParam.put("time", System.currentTimeMillis());
-        jsonParam.put("position", "test");
-        jsonParam.put("lng", locationHandler.getLongitude());
-
+//        jsonParam.put("position", "test");
 
         httpClient.put(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/" + deviceId, new StringEntity(jsonParam.toString()), "application/json", new AsyncHttpResponseHandler() {
             @Override
@@ -273,21 +286,29 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     }
 
 
-//    private void putRouteDetail() {
-//        RequestParams params = new RequestParams();
-//        params.put("ref", currentRouteId);
-//        params.put("routeId", currentJourneyId);
-//        httpClient.put(null, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/" + deviceId, params, new AsyncHttpResponseHandler() {
-//            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-//                System.out.println("put successful");
-//            }
-//
-//            @Override
-//            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-//                System.out.println("Failed put " + statusCode);
-//            }
-//        });
-//    }
+    private void UpdateCurrentPosition(final Location location) throws JSONException, UnsupportedEncodingException {
+        JSONObject jsonParam = new JSONObject();
+        jsonParam.put("ref", currentRouteId);
+        jsonParam.put("routeId", currentJourneyId);
+        jsonParam.put("time", System.currentTimeMillis());
+        JSONObject positionParam = new JSONObject();
+        positionParam.put("lng", location.getLongitude());
+        positionParam.put("lat", location.getLatitude());
+        jsonParam.put("position", positionParam);
+
+        httpClient.put(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/" + deviceId, new StringEntity(jsonParam.toString()), "application/json", new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                System.out.println("PUT UPDATE success");
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                error.printStackTrace();
+                System.out.println("PUT UPDATE Failed " + statusCode);
+            }
+        });
+    }
 
     private void showDialog(/*Route[] route*/) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -305,6 +326,13 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                 currentJourneyId = currentRoute.getId();
                 currentRouteId = currentRoute.getRef();
                 Toast.makeText(MainActivity.this, "clicked " + i + " currentRoute: " + currentRoute, Toast.LENGTH_LONG).show();
+                try {
+                    putRouteDetail();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
                 routes.clear();
             }
         });
@@ -319,4 +347,82 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         });
         dialog.show();
     }
+
+    private void writeToFile(String data,Context context) {
+        try {
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("config.txt", Context.MODE_PRIVATE));
+            outputStreamWriter.write(data);
+            outputStreamWriter.close();
+        }
+        catch (IOException e) {
+            Log.e("Exception", "File write failed: " + e.toString());
+        }
+    }
+
+//    public synchronized static String id(Context context) {
+//        if (uniqueID == null) {
+//            SharedPreferences sharedPrefs = context.getSharedPreferences(
+//                    PREF_UNIQUE_ID, Context.MODE_PRIVATE);
+//            uniqueID = sharedPrefs.getString(PREF_UNIQUE_ID, null);
+//            if (uniqueID == null) {
+//                //uniqueID = UUID.randomUUID().toString();
+//                uniqueID = Settings.Secure.getString(context.getContentResolver(),
+//                Settings.Secure.ANDROID_ID);
+//                SharedPreferences.Editor editor = sharedPrefs.edit();
+//                editor.putString(PREF_UNIQUE_ID, uniqueID);
+//                editor.commit();
+//            }
+//        }
+//        return uniqueID;
+//    }
+//
+//    @Override
+//    public SharedPreferences.Editor putString(String s, @Nullable String s1) {
+//        return null;
+//    }
+//
+//    @Override
+//    public SharedPreferences.Editor putStringSet(String s, @Nullable Set<String> set) {
+//        return null;
+//    }
+//
+//    @Override
+//    public SharedPreferences.Editor putInt(String s, int i) {
+//        return null;
+//    }
+//
+//    @Override
+//    public SharedPreferences.Editor putLong(String s, long l) {
+//        return null;
+//    }
+//
+//    @Override
+//    public SharedPreferences.Editor putFloat(String s, float v) {
+//        return null;
+//    }
+//
+//    @Override
+//    public SharedPreferences.Editor putBoolean(String s, boolean b) {
+//        return null;
+//    }
+//
+//    @Override
+//    public SharedPreferences.Editor remove(String s) {
+//        return null;
+//    }
+//
+//    @Override
+//    public SharedPreferences.Editor clear() {
+//        return null;
+//    }
+//
+//    @Override
+//    public boolean commit() {
+//        return false;
+//    }
+//
+//    @Override
+//    public void apply() {
+//
+//    }
 }

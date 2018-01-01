@@ -83,8 +83,9 @@ public class LocationHandler implements LocationListener {
         this.context = context;
         this.locationManager = (LocationManager) context.getSystemService(LOCATION_SERVICE);
         this.interval = interval;
-        this.deviceID = Secure.getString(context.getContentResolver(),
-                Secure.ANDROID_ID);
+//        this.deviceID = Secure.getString(context.getContentResolver(),
+//                Secure.ANDROID_ID);
+        this.deviceID = "stefan";
     }
 
 
