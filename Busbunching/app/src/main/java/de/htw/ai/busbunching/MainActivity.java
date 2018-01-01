@@ -61,8 +61,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
     private Button start_button;
     private EditText busline_text;
-    private TextView frontVehicle = (TextView) findViewById(R.id.textViewVehicleBehind);
-    private TextView vehicleBehind = (TextView) findViewById(R.id.textViewFrontVehicle);
+    private TextView frontVehicle;
+    private TextView vehicleBehind;
 
     private LocationHandler locationHandler;
 
@@ -114,6 +114,9 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        frontVehicle = (TextView) findViewById(R.id.textViewVehicleBehind);
+        vehicleBehind = (TextView) findViewById(R.id.textViewFrontVehicle);
 
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         //MenuItem an der Stelle 0 und angeben das es ausgewählt ist (setChecked(true)
