@@ -22,8 +22,7 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
+
 import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
@@ -34,11 +33,6 @@ import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.content.Context.LOCATION_SERVICE;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
-/**
- *
- *
- *
- */
 
 public class LocationHandler implements LocationListener {
 
@@ -121,8 +115,7 @@ public class LocationHandler implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
-        //setLatitude(location.getLatitude());
-        //setLongitude(location.getLongitude());
+
         System.out.println("LOCATION: " + location.getLatitude() + " " + location.getLongitude());
 
         for (LocationHandlerListener listener : listeners) {
