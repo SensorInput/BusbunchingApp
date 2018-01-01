@@ -96,8 +96,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         getRoute(routeID);
-        getVehiclesOnRoute(journeyID);
-        startGetVehiclesOnRouteHandler(journeyID);
+        System.out.println("journeyID: " + journeyID);
+        getVehiclesOnRoute();
+        startGetVehiclesOnRouteHandler();
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(BERLIN, 10));
     }
 
@@ -130,7 +131,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    private void getVehiclesOnRoute(long id) {
+    private void getVehiclesOnRoute() {
         httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/636c81cc2361acd7/list", new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -185,13 +186,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    private void startGetVehiclesOnRouteHandler(long routeId) {
+    private void startGetVehiclesOnRouteHandler() {
         Handler handler = new Handler();
         int delay = 10000; //milliseconds
 
         handler.postDelayed(new Runnable(){
             public void run(){
-                getVehiclesOnRoute(routeId);
+                getVehiclesOnRoute();
                 handler.postDelayed(this, delay);
             }
         }, delay);

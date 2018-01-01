@@ -204,6 +204,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     public void onLocationUpdate(Location location) {
         Toast.makeText(this, location.getLatitude() + " " + location.getLongitude(), Toast.LENGTH_SHORT).show();
         //TODO PUT
+        // putRouteDetail();
     }
 
     private void getRouteDetail(String ref) {
