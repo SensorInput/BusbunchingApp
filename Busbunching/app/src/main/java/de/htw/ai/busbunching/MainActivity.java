@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
     List<Route> routes = new ArrayList<>();
     private Route currentRoute;
-    private String currentRouteRef;
+    private long currentRouteId;
     private String buslinieId;
 
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
@@ -115,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
                     case R.id.navigation_map:
                         Intent intentMap = new Intent(MainActivity.this, MapsActivity.class);
-                        intentMap.putExtra("routeRef", currentRouteRef);
+                        intentMap.putExtra("ROUTEID", currentRouteId);
                         startActivity(intentMap);
                         break;
 
@@ -217,7 +217,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                         routes.add(route);
                     }
                     showDialog();
-//                    System.out.println(routes);
+                    System.out.println(routes);
 //                    System.out.println("routes.length: " + routes.size());
 
                 } catch (JSONException e) {
@@ -246,12 +246,11 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             routeNames[i] = routes.get(i).getName();
         }
 
-        System.out.println("routeNames: "  + routeNames);
         builder.setItems(routeNames,
             new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int i) {
                 currentRoute = routes.get(i);
-                currentRouteRef = currentRoute.getRef();
+                currentRouteId = currentRoute.getId();
                 Toast.makeText(MainActivity.this, "clicked " + i + " currentRoute: " + currentRoute, Toast.LENGTH_LONG).show();
                 routes.clear();
             }
@@ -266,6 +265,5 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             }
         });
         dialog.show();
-
     }
 }
