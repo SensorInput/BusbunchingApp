@@ -175,6 +175,8 @@ public class LocationHandler implements LocationListener {
         });
     }
 
+
+
     public String getDeviceID() {
         return deviceID;
     }

@@ -44,7 +44,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private long journeyID;
     private String routeID;
 //    private String URL_ADDRESS = "http://h2650399.stratoserver.net:4545/position";
-//    private String deviceID;
+    private String deviceId = "";
+    private LocationHandler locationHandler;
 
 
 
@@ -85,10 +86,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         if (LocationHandler.getInstance() == null) {
-            LocationHandler.createInstance(this, 10000);
+            locationHandler = LocationHandler.createInstance(this, 10000);
         }
+        locationHandler = LocationHandler.getInstance();
+        deviceId = locationHandler.getDeviceID();
         LocationHandler.getInstance().addListener(this);
-
         newlyLoaded = true;
     }
 
@@ -132,7 +134,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void getVehiclesOnRoute() {
-        httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/636c81cc2361acd7/list", new AsyncHttpResponseHandler() {
+        httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/" + deviceId  + "/list", new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
