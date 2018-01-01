@@ -150,14 +150,18 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
         //getRouteDetail("67");
 
+
+
         //routes[0].toString();
 
         locationHandler = LocationHandler.createInstance(this, 10000);
         locationHandler.askForPermission(this);
         locationHandler.addListener(this);
-        deviceId = locationHandler.getDeviceID();
+        deviceId = "4dcghc4zzc6cghcf";
 
         configureButton(this);
+
+        getVehiclesOnRoute();
 
     }
 
@@ -172,8 +176,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                 buslinieId = busline_text.getText().toString();
                 locationHandler.startLocationHandler();
                 busline_text.setText("");
-//                showDialog();
-                getRouteDetail(buslinieId);
+                //showDialog();
+                //getRouteDetail(buslinieId);
                 //Dialog
             }
         });
@@ -231,6 +235,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
+
+
     }
 
     private void getRouteDetail(String ref) {
@@ -284,17 +290,15 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                             JSONObject jsonVehicleBehind = allVehicleOnRoute.getJSONObject(i + 1);
 
                             int relTimeDistFront = jsonVehicleFront.getInt("relativeTimeDistance");
-                            MainActivity.this.frontVehicle.setText(Integer.toString(relTimeDistFront) + " min");
+                            String relTimeDistFrontString = formatMillisToOutputString(relTimeDistFront);
+                            System.out.println("@@@@@@@@@@@@@@@@ "+ relTimeDistFrontString);
+                            MainActivity.this.frontVehicle.setText(relTimeDistFrontString);
 
                             int relTimeDistBehind = jsonVehicleBehind.getInt("relativeTimeDistance");
-                            MainActivity.this.vehicleBehind.setText(Integer.toString(relTimeDistBehind) + " min");
+                            String relTimeDistBehindString = formatMillisToOutputString(relTimeDistBehind);
+                            MainActivity.this.vehicleBehind.setText(relTimeDistBehindString);
                         }
-
                     }
-                    showDialog();
-                    System.out.println(routes);
-//                    System.out.println("routes.length: " + routes.size());
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -303,7 +307,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 error.printStackTrace();
-                System.out.println("Failed success " + statusCode);
+                System.out.println("GET Failed " + statusCode);
             }
         });
     }
@@ -349,7 +353,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 //        });
 //    }
 
-    private void showDialog(/*Route[] route*/) {
+    private void showDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         View view = getLayoutInflater().inflate(R.layout.dialog_route, null);
 
