@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.location.Location;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -33,6 +34,10 @@ import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -45,6 +50,8 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
@@ -54,6 +61,9 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
     private Button start_button;
     private EditText busline_text;
+    private TextView frontVehicle = (TextView) findViewById(R.id.textViewVehicleBehind);
+    private TextView vehicleBehind = (TextView) findViewById(R.id.textViewFrontVehicle);
+
     private LocationHandler locationHandler;
 
     List<Route> routes = new ArrayList<>();
@@ -212,6 +222,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         //TODO PUT
         try {
             putRouteDetail();
+            getVehiclesOnRoute();
         } catch (JSONException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -225,11 +236,57 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
                     JSONArray allRoute = new JSONArray(new String(responseBody));
-                    for(int i=0; i< allRoute.length();i++) {
+                    for (int i = 0; i < allRoute.length(); i++) {
                         Gson gson = new Gson();
                         JSONObject jsonRoute = allRoute.getJSONObject(i);
-                        Route route = gson.fromJson(String.valueOf(jsonRoute),Route.class);
+                        Route route = gson.fromJson(String.valueOf(jsonRoute), Route.class);
                         routes.add(route);
+                    }
+                    showDialog();
+                    System.out.println(routes);
+//                    System.out.println("routes.length: " + routes.size());
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                error.printStackTrace();
+                System.out.println("Failed success " + statusCode);
+            }
+        });
+    }
+
+    private void getVehiclesOnRoute() {
+
+        httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/" + deviceId + "/list", new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONArray allVehicleOnRoute = new JSONArray(new String(responseBody));
+                    for (int i = 0; i < allVehicleOnRoute.length(); i++) {
+                        JSONObject jsonVehicle = allVehicleOnRoute.getJSONObject(i);
+                        if (jsonVehicle.getDouble("relativeDistance") == 0) {
+                            /*
+                            if(i<=0) {
+                                //Set textview vor mir auf 0; bzw bus verschwinden lassen
+                            }
+                            if(i+1 > allVehicleOnRoute.length()) {
+                                //set textview hinter mir auf 0; bzw bus verschwinden lassen
+                            }
+                            */
+                            JSONObject jsonVehicleFront = allVehicleOnRoute.getJSONObject(i - 1);
+                            JSONObject jsonVehicleBehind = allVehicleOnRoute.getJSONObject(i + 1);
+
+                            int relTimeDistFront = jsonVehicleFront.getInt("relativeTimeDistance");
+                            MainActivity.this.frontVehicle.setText(Integer.toString(relTimeDistFront) + " min");
+
+                            int relTimeDistBehind = jsonVehicleBehind.getInt("relativeTimeDistance");
+                            MainActivity.this.vehicleBehind.setText(Integer.toString(relTimeDistBehind) + " min");
+                        }
+
                     }
                     showDialog();
                     System.out.println(routes);
@@ -293,21 +350,21 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         View view = getLayoutInflater().inflate(R.layout.dialog_route, null);
 
-        CharSequence [] routeNames = new CharSequence[routes.size()];
-        for (int i = 0 ; i < routes.size(); i++) {
+        CharSequence[] routeNames = new CharSequence[routes.size()];
+        for (int i = 0; i < routes.size(); i++) {
             routeNames[i] = routes.get(i).getName();
         }
 
         builder.setItems(routeNames,
-            new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int i) {
-                currentRoute = routes.get(i);
-                currentJourneyId = currentRoute.getId();
-                currentRouteId = currentRoute.getRef();
-                Toast.makeText(MainActivity.this, "clicked " + i + " currentRoute: " + currentRoute, Toast.LENGTH_LONG).show();
-                routes.clear();
-            }
-        });
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int i) {
+                        currentRoute = routes.get(i);
+                        currentJourneyId = currentRoute.getId();
+                        currentRouteId = currentRoute.getRef();
+                        Toast.makeText(MainActivity.this, "clicked " + i + " currentRoute: " + currentRoute, Toast.LENGTH_LONG).show();
+                        routes.clear();
+                    }
+                });
 
         builder.setView(view);
         AlertDialog dialog = builder.create();
@@ -319,4 +376,13 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         });
         dialog.show();
     }
+
+
+    private String formatMillisToOutputString(long millis) {
+        return String.format("%d min, %d sec",
+                TimeUnit.MILLISECONDS.toMinutes(millis),
+                TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis))
+        );
+    }
+
 }
