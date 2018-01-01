@@ -41,6 +41,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GeoJsonLayer layer;
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
     private ArrayList<String> arrayList = new ArrayList<>();
+    private int busID;
 //    private String URL_ADDRESS = "http://h2650399.stratoserver.net:4545/position";
 //    private String deviceID;
 
@@ -50,6 +51,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        busID = getIntent().getIntExtra("BUSID", 1);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -90,9 +92,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        getRoute(68);
-        getVehiclesOnRoute(68);
-        startGetVehiclesOnRouteHandler(68);
+        getRoute(busID);
+        getVehiclesOnRoute(busID);
+        startGetVehiclesOnRouteHandler(busID);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(BERLIN, 10));
     }
 
