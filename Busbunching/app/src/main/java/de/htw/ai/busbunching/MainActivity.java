@@ -45,7 +45,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -70,6 +75,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     private long currentJourneyId;
     private String buslinieId;
     private String deviceId = "";
+
+    static final int READ_BLOCK_SIZE = 100;
 
     private static String uniqueID = null;
     private static final String PREF_UNIQUE_ID = "PREF_UNIQUE_ID";
@@ -115,17 +122,6 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-//        uniqueID = id(this);
-//        writeToFile("sdlfkjslk", this);
-//
-//        System.out.println("uniqueID onCreate after initialisation: " + uniqueID);
-//        System.out.println("PREF_UNIQUE_ID" + PREF_UNIQUE_ID);
-//
-//        Toast.makeText(this, "uniqueID onCreate after initialisation: " + uniqueID, Toast.LENGTH_LONG).show();
-
-
-
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         //MenuItem an der Stelle 0 und angeben das es ausgewählt ist (setChecked(true)
         Menu menu = navigation.getMenu();
@@ -159,7 +155,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         locationHandler = LocationHandler.createInstance(this, 10000);
         locationHandler.askForPermission(this);
         locationHandler.addListener(this);
-        deviceId = locationHandler.getDeviceID();
+        deviceId = getDeviceId();
+        locationHandler.setDeviceID(deviceId);
 
         configureButton(this);
     }
@@ -224,7 +221,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
     @Override
     public void onLocationUpdate(Location location) {
-        Toast.makeText(this, location.getLatitude() + " " + location.getLongitude(), Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this, location.getLatitude() + " " + location.getLongitude(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(MainActivity.this, "config.txt: " + readDeviceIdFromFile(this), Toast.LENGTH_LONG).show();
         try {
             UpdateCurrentPosition(location);
         } catch (JSONException e) {
@@ -310,6 +308,24 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         });
     }
 
+    private void postDeviceId() throws JSONException, UnsupportedEncodingException {
+        JSONObject jsonParam = new JSONObject();
+        jsonParam.put("ref", deviceId);
+
+        httpClient.post(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/", new StringEntity(jsonParam.toString()), "application/json", new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                System.out.println("PUT UPDATE success");
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                error.printStackTrace();
+                System.out.println("PUT UPDATE Failed " + statusCode);
+            }
+        });
+    }
+
     private void showDialog(/*Route[] route*/) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         View view = getLayoutInflater().inflate(R.layout.dialog_route, null);
@@ -348,7 +364,23 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         dialog.show();
     }
 
-    private void writeToFile(String data,Context context) {
+    private String getDeviceId() {
+       if(readDeviceIdFromFile(this) == "") {
+           String id = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+           writeDeviceIdToFile(id, this);
+           try {
+               postDeviceId();
+           } catch (JSONException e) {
+               e.printStackTrace();
+           } catch (UnsupportedEncodingException e) {
+               e.printStackTrace();
+           }
+           return id;
+       }
+       return readDeviceIdFromFile(this);
+    }
+
+    private void writeDeviceIdToFile(String data,Context context) {
         try {
             OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("config.txt", Context.MODE_PRIVATE));
             outputStreamWriter.write(data);
@@ -359,70 +391,33 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         }
     }
 
-//    public synchronized static String id(Context context) {
-//        if (uniqueID == null) {
-//            SharedPreferences sharedPrefs = context.getSharedPreferences(
-//                    PREF_UNIQUE_ID, Context.MODE_PRIVATE);
-//            uniqueID = sharedPrefs.getString(PREF_UNIQUE_ID, null);
-//            if (uniqueID == null) {
-//                //uniqueID = UUID.randomUUID().toString();
-//                uniqueID = Settings.Secure.getString(context.getContentResolver(),
-//                Settings.Secure.ANDROID_ID);
-//                SharedPreferences.Editor editor = sharedPrefs.edit();
-//                editor.putString(PREF_UNIQUE_ID, uniqueID);
-//                editor.commit();
-//            }
-//        }
-//        return uniqueID;
-//    }
-//
-//    @Override
-//    public SharedPreferences.Editor putString(String s, @Nullable String s1) {
-//        return null;
-//    }
-//
-//    @Override
-//    public SharedPreferences.Editor putStringSet(String s, @Nullable Set<String> set) {
-//        return null;
-//    }
-//
-//    @Override
-//    public SharedPreferences.Editor putInt(String s, int i) {
-//        return null;
-//    }
-//
-//    @Override
-//    public SharedPreferences.Editor putLong(String s, long l) {
-//        return null;
-//    }
-//
-//    @Override
-//    public SharedPreferences.Editor putFloat(String s, float v) {
-//        return null;
-//    }
-//
-//    @Override
-//    public SharedPreferences.Editor putBoolean(String s, boolean b) {
-//        return null;
-//    }
-//
-//    @Override
-//    public SharedPreferences.Editor remove(String s) {
-//        return null;
-//    }
-//
-//    @Override
-//    public SharedPreferences.Editor clear() {
-//        return null;
-//    }
-//
-//    @Override
-//    public boolean commit() {
-//        return false;
-//    }
-//
-//    @Override
-//    public void apply() {
-//
-//    }
+    private String readDeviceIdFromFile(Context context) {
+
+        String ret = "";
+
+        try {
+            InputStream inputStream = context.openFileInput("config.txt");
+
+            if ( inputStream != null ) {
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String receiveString = "";
+                StringBuilder stringBuilder = new StringBuilder();
+
+                while ( (receiveString = bufferedReader.readLine()) != null ) {
+                    stringBuilder.append(receiveString);
+                }
+
+                inputStream.close();
+                ret = stringBuilder.toString();
+            }
+        }
+        catch (FileNotFoundException e) {
+            Log.e("login activity", "File not found: " + e.toString());
+        } catch (IOException e) {
+            Log.e("login activity", "Can not read file: " + e.toString());
+        }
+        return ret;
+    }
+
 }
