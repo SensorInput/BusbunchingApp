@@ -147,6 +147,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         httpClient.get(this, url, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+
                 for(int i = 0; i < markerArrayList.size(); i++) {
                     markerArrayList.get(i).remove();
                 }
@@ -161,9 +162,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             try {
                                 JSONObject jsonObj = jsonArray.getJSONObject(i);
                                 System.out.println(jsonObj);
-                                JSONObject jsonObject = jsonArray.getJSONObject(i).getJSONObject("geoLngLat");
+                                JSONObject jsonObject = jsonObj.getJSONObject("geoLngLat");
                                 LatLng latLng = new LatLng(jsonObject.getDouble("lat"), jsonObject.getDouble("lng"));
-                                if (jsonObj.getDouble("relativeDistance") == 0) {
+                                if (jsonObj.getString("ref").equals(locationHandler.getDeviceID())) {
                                     if (newlyLoaded) {
                                         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
                                         mMap.animateCamera(CameraUpdateFactory.zoomTo(12), 2000, null);
