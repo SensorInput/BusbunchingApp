@@ -1,6 +1,8 @@
 package de.htw.ai.busbunching;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -29,9 +31,13 @@ import org.json.JSONObject;
 
 
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import cz.msebera.android.httpclient.Header;
+
+import android.provider.Settings;
+import android.provider.Settings.Secure;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationHandler.LocationHandlerListener {
 
@@ -216,4 +222,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis))
         );
     }
+
+
 }
