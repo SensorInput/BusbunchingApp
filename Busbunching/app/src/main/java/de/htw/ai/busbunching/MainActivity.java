@@ -1,6 +1,5 @@
 package de.htw.ai.busbunching;
 
-
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -53,8 +52,6 @@ import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
-
-//public class MainActivity extends AppCompatActivity implements LocationHandler.LocationHandlerListener, SharedPreferences.Editor {
 public class MainActivity extends AppCompatActivity implements LocationHandler.LocationHandlerListener {
 
     private static final String CONFIG = "config.txt";
@@ -78,7 +75,6 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
 
     private static final String TAG = "MainActivity";
-    //Error den wir erhalten wenn der user nicht die korrekte version der Google Play Services besitzt
     private static final int ERROR_DIALOG_REQUEST = 9001;
 
     @Override
@@ -243,12 +239,16 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                                 int relTimeDistFront = jsonVehicleFront.getInt("relativeTimeDistance");
                                 String relTimeDistFrontString = formatMillisToOutputString(relTimeDistFront);
                                 MainActivity.this.frontVehicle.setText(relTimeDistFrontString);
+                            } else {
+                                MainActivity.this.frontVehicle.setText("No Vehicle");
                             }
                             if (i + 1 < allVehicleOnRoute.length()) {
                                 JSONObject jsonVehicleBehind = allVehicleOnRoute.getJSONObject(i + 1);
                                 int relTimeDistBehind = jsonVehicleBehind.getInt("relativeTimeDistance");
                                 String relTimeDistBehindString = formatMillisToOutputString(relTimeDistBehind);
                                 MainActivity.this.vehicleBehind.setText(relTimeDistBehindString);
+                            } else {
+                                MainActivity.this.vehicleBehind.setText("No Vehicle");
                             }
 
                             /* Beispiel
