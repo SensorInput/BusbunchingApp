@@ -74,6 +74,7 @@ public class LocationHandler implements LocationListener {
     }
 
     public interface LocationHandlerListener {
+        void onLocationStart();
         void onLocationUpdate(Location location);
         void onLocationStop();
     }
@@ -96,6 +97,9 @@ public class LocationHandler implements LocationListener {
             return;
         }
         locationManager.requestLocationUpdates("gps", interval, 0, this);
+        for (LocationHandlerListener listener : listeners) {
+            listener.onLocationStart();
+        }
     }
 
     public void stopLocationHandler() {
@@ -119,7 +123,6 @@ public class LocationHandler implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
-
         System.out.println("LOCATION: " + location.getLatitude() + " " + location.getLongitude());
 
         for (LocationHandlerListener listener : listeners) {

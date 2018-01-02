@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -57,6 +58,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     private static final String CONFIG = "config.txt";
     private String host;
 
+    private boolean destroyed;
+
     private Button start_button;
     private EditText busline_text;
     private TextView frontVehicle;
@@ -69,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     private Route currentRoute;
     private String currentLineId;
     private long currentRouteId;
-    private String buslinieId;
+    private String busLineId;
     private String deviceId = "";
 
     static boolean isStarted;
@@ -143,10 +146,11 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                 locationHandler.stopLocationHandler();
             } else {
                 start_button.setText("STOP");
-                buslinieId = busline_text.getText().toString();
-                locationHandler.startLocationHandler();
+                busLineId = busline_text.getText().toString();
                 busline_text.setText("");
-                getRouteDetail(buslinieId);
+
+                getRouteDetail(busLineId);
+                locationHandler.startLocationHandler();
             }
             isStarted = !isStarted;
         });
@@ -209,7 +213,28 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     }
 
     @Override
+    public void onLocationStart() {
+        destroyed = false;
+        startGetVehiclesOnRouteHandler();
+    }
+
+    @Override
     public void onLocationStop() {
+        destroyed = true;
+    }
+
+    private void startGetVehiclesOnRouteHandler() {
+        Handler handler = new Handler();
+        int delay = 10000; //milliseconds
+
+        handler.postDelayed(new Runnable(){
+            public void run(){
+                getVehiclesOnRoute();
+                if (!destroyed) {
+                    handler.postDelayed(this, delay);
+                }
+            }
+        }, delay);
     }
 
     private void getRouteDetail(String ref) {
@@ -252,7 +277,6 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                                 //set textview hinter mir auf 0; bzw bus verschwinden lassen
                             }
                             */
-                            // TODO Check null pointer
                             if (i - 1 >= 0) {
                                 JSONObject jsonVehicleFront = allVehicleOnRoute.getJSONObject(i - 1);
 
@@ -303,7 +327,6 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 System.out.println("PUT Route detail success");
-                getVehiclesOnRoute();
             }
 
             @Override
@@ -385,6 +408,10 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         dialog.setOnCancelListener(dialog1 -> routes.clear());
         dialog.show();
     }
+
+    /*
+    Settings
+     */
 
     private String getDeviceId() {
         String deviceId = readDeviceIdFromFile(this);

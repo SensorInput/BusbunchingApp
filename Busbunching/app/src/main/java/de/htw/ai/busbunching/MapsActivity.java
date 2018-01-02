@@ -221,12 +221,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     @Override
+    public void onLocationStart() {
+        destroyed = false;
+    }
+
+    @Override
     public void onLocationUpdate(Location location) {
-        // TODO POST mit location MAYBE
-
-//        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-//        mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
-
     }
 
     @Override
