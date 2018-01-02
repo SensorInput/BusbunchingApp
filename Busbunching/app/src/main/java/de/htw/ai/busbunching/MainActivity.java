@@ -12,6 +12,7 @@ import android.location.Location;
 
 import android.os.Bundle;
 import android.provider.Settings;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
@@ -25,6 +26,7 @@ import android.view.View;
 import android.widget.Button;
 
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,6 +38,10 @@ import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -57,6 +63,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
@@ -67,6 +75,11 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
     private Button start_button;
     private EditText busline_text;
+    private TextView frontVehicle;
+    private TextView vehicleBehind;
+    private ImageView vehicleFrontImage;
+    private ImageView vehicleBackImage;
+
     private LocationHandler locationHandler;
 
     List<Route> routes = new ArrayList<>();
@@ -122,6 +135,12 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        frontVehicle = (TextView) findViewById(R.id.textViewVehicleBehind);
+        vehicleBehind = (TextView) findViewById(R.id.textViewFrontVehicle);
+
+        vehicleFrontImage = (ImageView) findViewById(R.id.imageViewFrontVehicle);
+        vehicleBackImage = (ImageView) findViewById(R.id.imageViewVehicleBehind);
+
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         //MenuItem an der Stelle 0 und angeben das es ausgewählt ist (setChecked(true)
         Menu menu = navigation.getMenu();
@@ -159,6 +178,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         locationHandler.setDeviceID(deviceId);
 
         configureButton(this);
+        getVehiclesOnRoute();
     }
 
     public void configureButton(final Context context) {
@@ -172,8 +192,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                 buslinieId = busline_text.getText().toString();
                 locationHandler.startLocationHandler();
                 busline_text.setText("");
-//                showDialog();
-                getRouteDetail(buslinieId);
+                //showDialog();
+                //getRouteDetail(buslinieId);
                 //Dialog
             }
         });
@@ -225,11 +245,14 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         Toast.makeText(MainActivity.this, "config.txt: " + readDeviceIdFromFile(this), Toast.LENGTH_LONG).show();
         try {
             UpdateCurrentPosition(location);
+            getVehiclesOnRoute();
         } catch (JSONException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
+
+
     }
 
     private void getRouteDetail(String ref) {
@@ -238,10 +261,10 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
                     JSONArray allRoute = new JSONArray(new String(responseBody));
-                    for(int i=0; i< allRoute.length();i++) {
+                    for (int i = 0; i < allRoute.length(); i++) {
                         Gson gson = new Gson();
                         JSONObject jsonRoute = allRoute.getJSONObject(i);
-                        Route route = gson.fromJson(String.valueOf(jsonRoute),Route.class);
+                        Route route = gson.fromJson(String.valueOf(jsonRoute), Route.class);
                         routes.add(route);
                     }
                     showDialog();
@@ -257,6 +280,56 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 error.printStackTrace();
                 System.out.println("Failed success " + statusCode);
+            }
+        });
+    }
+
+    private void getVehiclesOnRoute() {
+
+        httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/" + deviceId + "/list", new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONArray allVehicleOnRoute = new JSONArray(new String(responseBody));
+                    for (int i = 0; i < allVehicleOnRoute.length(); i++) {
+                        JSONObject jsonVehicle = allVehicleOnRoute.getJSONObject(i);
+                        if (jsonVehicle.getDouble("relativeDistance") == 0) {
+                            /*
+                            if(i<=0) {
+                                //Set textview vor mir auf 0; bzw bus verschwinden lassen
+                            }
+                            if(i+1 > allVehicleOnRoute.length()) {
+                                //set textview hinter mir auf 0; bzw bus verschwinden lassen
+                            }
+                            */
+                            JSONObject jsonVehicleFront = allVehicleOnRoute.getJSONObject(i - 1);
+                            JSONObject jsonVehicleBehind = allVehicleOnRoute.getJSONObject(i + 1);
+
+                            int relTimeDistFront = jsonVehicleFront.getInt("relativeTimeDistance");
+                            /* Beispiel
+                            if(relTimeDistFront < 7) {
+                                vehicleFrontImage.setBackgroundColor(200);
+                            }
+                            */
+
+                            String relTimeDistFrontString = formatMillisToOutputString(relTimeDistFront);
+                            System.out.println("@@@@@@@@@@@@@@@@ "+ relTimeDistFrontString);
+                            MainActivity.this.frontVehicle.setText(relTimeDistFrontString);
+
+                            int relTimeDistBehind = jsonVehicleBehind.getInt("relativeTimeDistance");
+                            String relTimeDistBehindString = formatMillisToOutputString(relTimeDistBehind);
+                            MainActivity.this.vehicleBehind.setText(relTimeDistBehindString);
+                        }
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                error.printStackTrace();
+                System.out.println("GET Failed " + statusCode);
             }
         });
     }
@@ -326,12 +399,12 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         });
     }
 
-    private void showDialog(/*Route[] route*/) {
+    private void showDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         View view = getLayoutInflater().inflate(R.layout.dialog_route, null);
 
-        CharSequence [] routeNames = new CharSequence[routes.size()];
-        for (int i = 0 ; i < routes.size(); i++) {
+        CharSequence[] routeNames = new CharSequence[routes.size()];
+        for (int i = 0; i < routes.size(); i++) {
             routeNames[i] = routes.get(i).getName();
         }
 
@@ -418,6 +491,13 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
             Log.e("login activity", "Can not read file: " + e.toString());
         }
         return ret;
+	}
+
+    private String formatMillisToOutputString(long millis) {
+        return String.format("%d min, %d sec",
+                TimeUnit.MILLISECONDS.toMinutes(millis),
+                TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis))
+        );
     }
 
 }
