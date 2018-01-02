@@ -243,7 +243,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                     JSONArray allVehicleOnRoute = new JSONArray(new String(responseBody));
                     for (int i = 0; i < allVehicleOnRoute.length(); i++) {
                         JSONObject jsonVehicle = allVehicleOnRoute.getJSONObject(i);
-                        if (jsonVehicle.getDouble("relativeDistance") == 0) {
+                        if (jsonVehicle.getString("ref").equals(locationHandler.getDeviceID())) {
                             /*
                             if(i<=0) {
                                 //Set textview vor mir auf 0; bzw bus verschwinden lassen
