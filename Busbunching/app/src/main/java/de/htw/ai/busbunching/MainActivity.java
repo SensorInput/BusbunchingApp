@@ -101,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
                     Intent intentMap = new Intent(MainActivity.this, MapsActivity.class);
                     intentMap.putExtra("ROUTE", currentRouteId);
                     intentMap.putExtra("LINE", currentLineId);
+                    intentMap.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intentMap);
                     break;
                 case R.id.navigation_credits:

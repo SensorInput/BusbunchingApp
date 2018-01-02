@@ -25,6 +25,7 @@ public class CreditsActivity extends AppCompatActivity {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
                     Intent intentHome = new Intent(CreditsActivity.this, MainActivity.class);
+                    intentHome.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intentHome);
                     break;
 
@@ -32,6 +33,7 @@ public class CreditsActivity extends AppCompatActivity {
                     Intent intentMap = new Intent(CreditsActivity.this, MapsActivity.class);
                     intentMap.putExtra("ROUTE", journeyID);
                     intentMap.putExtra("LINE", routeID);
+                    intentMap.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intentMap);
                     break;
 

@@ -75,6 +75,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             switch (item.getItemId()) {
                 case R.id.navigation_home:
                     Intent intentHome = new Intent(MapsActivity.this, MainActivity.class);
+                    intentHome.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intentHome);
                     break;
                 case R.id.navigation_credits:
