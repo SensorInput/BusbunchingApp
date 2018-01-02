@@ -7,5 +7,7 @@
     <!--<string name="google_maps_API_key">AIzaSyDw4eRq1gsWty-KqSluVM_Cwys6LiNYE4M</string>-->
     <string name="start">Start</string>
     <string name="buslinie">Buslinie</string>
+    <string name="headline">Erfassung, Auswertung und Visualisierung von routenbasierten Positionsdaten anhand der Omnibusse der BVG</string>
+    <string name="description">Diese Anwendung entstand im Rahmen des Projektes "Erfassung, Auswertung und Visualisierung von routenbasierten Positionsdaten anhand der Omnibusse der BVG" der HTW-Berlin, welches durch hart arbeitende Studenten geschaffen wurde. Die Primäre Aufgabe des Systems ist es, den zeitlichen Abstand von zwei Objekten auf einer Route zu bestimmen. Im konkreten Anwendungsfall sollen zeitliche Abstände und Positionsdaten von Omnibussen ermittelt und visuell ansprechend dargestellt werden.</string>
 
 </resources>
