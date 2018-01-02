@@ -1,14 +1,12 @@
 package de.htw.ai.busbunching;
 
-import android.content.Context;
+import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.location.Location;
+import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -19,8 +17,6 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-
-
 import com.google.maps.android.geojson.GeoJsonLayer;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -29,93 +25,96 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
-import java.util.ArrayList;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import cz.msebera.android.httpclient.Header;
 
-import android.provider.Settings;
-import android.provider.Settings.Secure;
-
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationHandler.LocationHandlerListener {
 
+    private String host;
+
     private static final LatLng BERLIN = new LatLng(52.5200066,13.404954);
-    private boolean newlyLoaded;
+    private boolean newlyLoaded; // Flag to move camera
+
     private GoogleMap mMap;
     private GeoJsonLayer layer;
-    private static AsyncHttpClient httpClient = new AsyncHttpClient();
-    private ArrayList<String> arrayList = new ArrayList<>();
-    private long journeyID;
-    private String routeID;
-//    private String URL_ADDRESS = "http://h2650399.stratoserver.net:4545/position";
-    private String deviceId = "";
     private LocationHandler locationHandler;
 
+    private static AsyncHttpClient httpClient = new AsyncHttpClient();
 
+    private long routeId;
+    private String lineId;
+
+    private boolean destroyed = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        journeyID = getIntent().getLongExtra("JOURNEYID", 0);
-        routeID = getIntent().getStringExtra("ROUTEID");
-        System.out.println("journeyID: " + journeyID);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+
+        host = getBaseContext().getString(R.string.host);
+
+        routeId = getIntent().getLongExtra("ROUTE", 0);
+        lineId = getIntent().getStringExtra("LINE");
+
+        // Obtain the SupportMapFragment
+        // and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
-        //navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        BottomNavigationView navigation = findViewById(R.id.navigation);
         Menu menu = navigation.getMenu();
         MenuItem menuItem = menu.getItem(1);
         menuItem.setChecked(true);
-        navigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                switch (item.getItemId()) {
-                    case R.id.navigation_home:
-                        Intent intentHome = new Intent(MapsActivity.this, MainActivity.class);
-                        startActivity(intentHome);
-                        break;
-                    case R.id.navigation_map:
-                        break;
-                    case R.id.navigation_credits:
-                        Intent intentCredits = new Intent(MapsActivity.this, CreditsActivity.class);
-                        startActivity(intentCredits);
-                        break;
-                }
-                return false;
+        navigation.setOnNavigationItemSelectedListener(item -> {
+            switch (item.getItemId()) {
+                case R.id.navigation_home:
+                    Intent intentHome = new Intent(MapsActivity.this, MainActivity.class);
+                    startActivity(intentHome);
+                    break;
+                case R.id.navigation_credits:
+                    Intent intentCredits = new Intent(MapsActivity.this, CreditsActivity.class);
+                    intentCredits.putExtra("ROUTE", routeId);
+                    intentCredits.putExtra("LINE", lineId);
+                    startActivity(intentCredits);
+                    break;
+                default:
+                    break;
             }
+            return false;
         });
 
         if (LocationHandler.getInstance() == null) {
             locationHandler = LocationHandler.createInstance(this, 10000);
         }
         locationHandler = LocationHandler.getInstance();
-        deviceId = locationHandler.getDeviceID();
         LocationHandler.getInstance().addListener(this);
+
         newlyLoaded = true;
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        getRoute(routeID);
-        System.out.println("journeyID: " + journeyID);
+        getRoute(routeId);
+
         getVehiclesOnRoute();
         startGetVehiclesOnRouteHandler();
+
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(BERLIN, 10));
     }
 
-    private void getLocationPermission() {
-        //String[] persmission = {Mainfe}
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        destroyed = true;
+        LocationHandler.getInstance().removeListener(this);
     }
 
-    private void getRoute(String id) {
-        httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/route/geo/" + id, new AsyncHttpResponseHandler() {
+    private void getRoute(long id) {
+        String url = host + "/api/v1/route/geo/" + id;
+        httpClient.get(this, url, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
@@ -140,7 +139,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void getVehiclesOnRoute() {
-        httpClient.get(this, "http://h2650399.stratoserver.net:4545/api/v1/vehicle/" + deviceId  + "/list", new AsyncHttpResponseHandler() {
+        String url = host + "/api/v1/vehicle/" + locationHandler.getDeviceID() + "/list";
+        httpClient.get(this, url, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
@@ -201,7 +201,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         handler.postDelayed(new Runnable(){
             public void run(){
                 getVehiclesOnRoute();
-                handler.postDelayed(this, delay);
+                if (!destroyed) {
+                    handler.postDelayed(this, delay);
+                }
             }
         }, delay);
     }
@@ -216,6 +218,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    @SuppressLint("DefaultLocale")
     private String formatMillisToOutputString (long millis) {
         return String.format("%d min, %d sec",
                 TimeUnit.MILLISECONDS.toMinutes(millis),

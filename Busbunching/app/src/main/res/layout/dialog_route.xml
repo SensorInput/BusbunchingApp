@@ -12,7 +12,6 @@
         android:layout_height="19dp"
         android:layout_marginBottom="10dp"
         android:layout_marginTop="8dp"
-        android:text="TEST"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"

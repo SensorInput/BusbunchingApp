@@ -10,7 +10,6 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.provider.Settings.Secure;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 
@@ -22,7 +21,6 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-
 import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
@@ -83,12 +81,11 @@ public class LocationHandler implements LocationListener {
         this.context = context;
         this.locationManager = (LocationManager) context.getSystemService(LOCATION_SERVICE);
         this.interval = interval;
-        this.deviceID = "stefan";
+        this.deviceID = "<empty>";
     }
 
 
     public void startLocationHandler() {
-
         if (ActivityCompat.checkSelfPermission(context, ACCESS_FINE_LOCATION) != PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 //String array mit Permission die wir in die AndroidManifest datei geschrieben haben, request code kann eine randomnummer sein, wichtig aber fuer "onRequestPermissionResult
@@ -120,17 +117,6 @@ public class LocationHandler implements LocationListener {
         for (LocationHandlerListener listener : listeners) {
             listener.onLocationUpdate(location);
         }
-
-        /*
-        try {
-            sendPost(location);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        */
-
     }
 
     @Override
