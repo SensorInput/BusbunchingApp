@@ -72,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
     private String buslinieId;
     private String deviceId = "";
 
+    static boolean isStarted;
+
     private static AsyncHttpClient httpClient = new AsyncHttpClient();
 
     private static final String TAG = "MainActivity";
@@ -130,10 +132,23 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         busline_text = findViewById(R.id.busline);
 
         start_button.setOnClickListener(view -> {
-            buslinieId = busline_text.getText().toString();
-            locationHandler.startLocationHandler();
-            busline_text.setText("");
-            getRouteDetail(buslinieId);
+            if(isStarted) {
+                start_button.setText("START");
+                currentRouteId = -1;
+                try {
+                    putRouteDetail();
+                } catch (JSONException | UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+                locationHandler.stopLocationHandler();
+            } else {
+                start_button.setText("STOP");
+                buslinieId = busline_text.getText().toString();
+                locationHandler.startLocationHandler();
+                busline_text.setText("");
+                getRouteDetail(buslinieId);
+            }
+            isStarted = !isStarted;
         });
     }
 
@@ -191,6 +206,10 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         } catch (JSONException | UnsupportedEncodingException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void onLocationStop() {
     }
 
     private void getRouteDetail(String ref) {
@@ -275,7 +294,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
     private void putRouteDetail() throws JSONException, UnsupportedEncodingException {
         JSONObject jsonParam = new JSONObject();
-        jsonParam.put("ref", currentLineId);
+        jsonParam.put("ref", deviceId);
         jsonParam.put("routeId", currentRouteId);
         jsonParam.put("time", System.currentTimeMillis());
 

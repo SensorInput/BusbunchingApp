@@ -75,6 +75,7 @@ public class LocationHandler implements LocationListener {
 
     public interface LocationHandlerListener {
         void onLocationUpdate(Location location);
+        void onLocationStop();
     }
 
     private LocationHandler(Context context, int interval) {
@@ -95,6 +96,13 @@ public class LocationHandler implements LocationListener {
             return;
         }
         locationManager.requestLocationUpdates("gps", interval, 0, this);
+    }
+
+    public void stopLocationHandler() {
+        locationManager.removeUpdates(this);
+        for (LocationHandlerListener listener : listeners) {
+            listener.onLocationStop();
+        }
     }
 
     private void requestOnPermissions(String[] strings, int i) {

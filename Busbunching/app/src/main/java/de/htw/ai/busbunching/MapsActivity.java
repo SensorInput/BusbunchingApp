@@ -229,6 +229,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    @Override
+    public void onLocationStop() {
+        destroyed = true;
+    }
+
     @SuppressLint("DefaultLocale")
     private String formatMillisToOutputString (long millis) {
         return String.format("%d min, %d sec",
