@@ -16,6 +16,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.geojson.GeoJsonLayer;
 import com.loopj.android.http.AsyncHttpClient;
@@ -25,6 +26,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import cz.msebera.android.httpclient.Header;
@@ -46,6 +48,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private String lineId;
 
     private boolean destroyed = false;
+
+    private ArrayList <Marker> markerArrayList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -143,7 +147,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         httpClient.get(this, url, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                for(int i = 0; i < markerArrayList.size(); i++) {
+                    markerArrayList.get(i).remove();
+                }
+                markerArrayList.clear();
                 try {
+
                     JSONArray jsonArray = new JSONArray(new String(responseBody));
 
                     Handler mainHandler = new Handler(MapsActivity.this.getMainLooper()) ;
@@ -160,19 +169,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                         mMap.animateCamera(CameraUpdateFactory.zoomTo(12), 2000, null);
                                         newlyLoaded = false;
                                     }
-                                    mMap.addMarker(new MarkerOptions()
+                                    markerArrayList.add(mMap.addMarker(new MarkerOptions()
                                             .position(latLng)
-                                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))));
                                 } else {
                                     double relDist = jsonObj.getDouble("relativeDistance");
                                     relDist = ((double)((int)(relDist * 100))) / 100;
                                     int relTimeDist = jsonObj.getInt("relativeTimeDistance");
                                     String relTimeDistString = formatMillisToOutputString(relTimeDist);
-                                    mMap.addMarker(new MarkerOptions()
+                                    markerArrayList.add(mMap.addMarker(new MarkerOptions()
                                             .position(latLng)
                                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
                                             .title(relTimeDistString)
-                                            .snippet(String.valueOf(relDist) + " Meter"));
+                                            .snippet(String.valueOf(relDist) + " Meter")));
                                 }
                             } catch (JSONException e) {
                                 e.printStackTrace();
