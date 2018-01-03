@@ -135,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         busline_text = findViewById(R.id.busline);
 
         start_button.setOnClickListener(view -> {
-            if(isStarted) {
+            if (isStarted) {
                 start_button.setText("START");
                 currentRouteId = -1;
                 try {
@@ -203,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
 
     @Override
     public void onLocationUpdate(Location location) {
-        Toast.makeText(MainActivity.this, "config.txt: " + readDeviceIdFromFile(this), Toast.LENGTH_LONG).show();
+        Toast.makeText(MainActivity.this, String.format("Get Location:  %f %f", location.getLongitude(), location.getLatitude()), Toast.LENGTH_LONG).show();
         try {
             updateCurrentPosition(location);
             getVehiclesOnRoute();
@@ -227,8 +227,8 @@ public class MainActivity extends AppCompatActivity implements LocationHandler.L
         Handler handler = new Handler();
         int delay = 10000; //milliseconds
 
-        handler.postDelayed(new Runnable(){
-            public void run(){
+        handler.postDelayed(new Runnable() {
+            public void run() {
                 getVehiclesOnRoute();
                 if (!destroyed) {
                     handler.postDelayed(this, delay);
