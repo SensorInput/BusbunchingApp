@@ -9,5 +9,5 @@
     <string name="headline">Erfassung, Auswertung und Visualisierung von routenbasierten Positionsdaten anhand der Omnibusse der BVG</string>
     <string name="description">Diese Anwendung entstand im Rahmen des Modules Mobile Anwendungen, welches durch hart arbeitende Studenten geschaffen wurde. Die Primäre Aufgabe des Systems ist es, den zeitlichen Abstand von zwei Objekten auf einer Route zu bestimmen. Im konkreten Anwendungsfall sollen zeitliche Abstände und Positionsdaten von Omnibussen ermittelt und visuell ansprechend dargestellt werden.</string>
 
-    <string name="host">http://h2650399.stratoserver.net:4545</string>
+    <string name="host">http://bus.f4.htw-berlin.de:4545</string>
 </resources>
